@@ -1,12 +1,14 @@
 name: Gemini Assistant
 
 on:
+  workflow_dispatch: # Enables manual trigger from GitHub Actions tab
   issue_comment:
     types: [created]
 
 jobs:
   gemini:
-    if: contains(github.event.comment.body, '@gemini-cli')
+    # Allows manual trigger OR comment containing @gemini-cli
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.comment.body, '@gemini-cli')
     runs-on: ubuntu-latest
     permissions:
       contents: write
