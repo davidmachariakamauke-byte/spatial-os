@@ -9,29 +9,40 @@ on:
         type: string
   issues:
     types: [opened]
-  issue_comment:
-    types: [created]
 
 jobs:
   gemini:
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issues' && contains(github.event.issue.body, '@gemini-cli')) ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@gemini-cli'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
       issues: write
-      pull-requests: write
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
       
-      - name: Run Gemini CLI Action
+      - name: Run Gemini AI Generator
         uses: google-github-actions/run-gemini-cli@v0
+        id: generate-app
         env:
           GEMINI_CLI_TRUST_WORKSPACE: "true"
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          args: ${{ github.event.inputs.prompt || github.event.issue.body || github.event.comment.body }}
+          # Use 'prompt:' instead of 'args:'
+          prompt: ${{ github.event.inputs.prompt || github.event.issue.body }}
+          
+      - name: Save & Commit Code
+        run: |
+          # Create the src directory if it doesn't exist
+          mkdir -p src
+          
+          # The action outputs the result. You may need to pipe it from the CLI
+          # For run-gemini-cli, we output the step result to App.jsx
+          echo "${{ steps.generate-app.outputs.response }}" > src/App.jsx
+          
+          # Configure Git and Commit
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/App.jsx
+          git commit -m "feat: generate Nexus Arena App via Gemini AI" || echo "No changes to commit"
+          git push
