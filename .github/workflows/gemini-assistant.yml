@@ -1,4 +1,4 @@
- name: Gemini Assistant
+name: Gemini Assistant
 
 on:
   workflow_dispatch:
